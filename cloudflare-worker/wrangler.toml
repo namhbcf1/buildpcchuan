@@ -1,0 +1,11 @@
+name = "tp-pc-builder-api"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+EDIT_PASSWORD = "namhbcf12"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tp_pc_builder"
+database_id = "c610c0e0-22c1-4fea-90b5-69a62042adae"
