@@ -30,13 +30,7 @@ export default {
 				return json(data)
 			}
 
-			// write guard
-			if ((pathname.startsWith('/inventory') || pathname.startsWith('/configs')) && method !== 'GET') {
-				const pwd = searchParams.get('password') || request.headers.get('x-edit-password')
-				if (pwd !== (env.EDIT_PASSWORD || 'namhbcf12')) {
-					return json({ error: 'unauthorized' }, 401)
-				}
-			}
+			// NOTE: No API-level auth. Page-level password gate is used instead per requirements.
 
 			if (pathname === '/inventory' && method === 'POST') {
 				const body = await request.json()
