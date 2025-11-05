@@ -5,59 +5,63 @@
 
 export default {
 	async fetch(request, env) {
-		const url = new URL(request.url)
-		const { pathname, searchParams } = url
-		const method = request.method.toUpperCase()
+		try {
+			const url = new URL(request.url)
+			const { pathname, searchParams } = url
+			const method = request.method.toUpperCase()
 
-		// CORS preflight
-		if (method === 'OPTIONS') {
-			return cors(new Response(null, { status: 204 }))
-		}
-
-		// Routes
-		if (pathname === '/health') {
-			return json({ ok: true })
-		}
-
-		if (pathname === '/inventory' && method === 'GET') {
-			const data = await allInventory(env.DB)
-			return json(data)
-		}
-
-		if (pathname === '/configs' && method === 'GET') {
-			const data = await allConfigs(env.DB)
-			return json(data)
-		}
-
-		// write guard
-		if ((pathname.startsWith('/inventory') || pathname.startsWith('/configs')) && method !== 'GET') {
-			const pwd = searchParams.get('password') || request.headers.get('x-edit-password')
-			if (pwd !== (env.EDIT_PASSWORD || 'namhbcf12')) {
-				return json({ error: 'unauthorized' }, 401)
+			// CORS preflight
+			if (method === 'OPTIONS') {
+				return cors(new Response(null, { status: 204 }))
 			}
-		}
 
-		if (pathname === '/inventory' && method === 'POST') {
-			const body = await request.json()
-			// body: { cat, id, name?, price?, quantity? } (upsert)
-			await upsertInventory(env.DB, body)
-			return json({ ok: true })
-		}
+			// Routes
+			if (pathname === '/health') {
+				return json({ ok: true })
+			}
 
-		if (pathname.startsWith('/inventory/') && method === 'DELETE') {
-			const [, , cat, id] = pathname.split('/')
-			await deleteInventory(env.DB, cat, id)
-			return json({ ok: true })
-		}
+			if (pathname === '/inventory' && method === 'GET') {
+				const data = await allInventory(env.DB)
+				return json(data)
+			}
 
-		if (pathname === '/configs' && method === 'POST') {
-			const body = await request.json()
-			// body: { cpuType, game, budgetKey, payload }
-			await upsertConfig(env.DB, body)
-			return json({ ok: true })
-		}
+			if (pathname === '/configs' && method === 'GET') {
+				const data = await allConfigs(env.DB)
+				return json(data)
+			}
 
-		return json({ error: 'not_found' }, 404)
+			// write guard
+			if ((pathname.startsWith('/inventory') || pathname.startsWith('/configs')) && method !== 'GET') {
+				const pwd = searchParams.get('password') || request.headers.get('x-edit-password')
+				if (pwd !== (env.EDIT_PASSWORD || 'namhbcf12')) {
+					return json({ error: 'unauthorized' }, 401)
+				}
+			}
+
+			if (pathname === '/inventory' && method === 'POST') {
+				const body = await request.json()
+				// body: { cat, id, name?, price?, quantity? } (upsert)
+				await upsertInventory(env.DB, body)
+				return json({ ok: true })
+			}
+
+			if (pathname.startsWith('/inventory/') && method === 'DELETE') {
+				const [, , cat, id] = pathname.split('/')
+				await deleteInventory(env.DB, cat, id)
+				return json({ ok: true })
+			}
+
+			if (pathname === '/configs' && method === 'POST') {
+				const body = await request.json()
+				// body: { cpuType, game, budgetKey, payload }
+				await upsertConfig(env.DB, body)
+				return json({ ok: true })
+			}
+
+			return json({ error: 'not_found' }, 404)
+		} catch (err) {
+			return json({ error: 'internal_error', message: String(err?.message || err) }, 500)
+		}
 	}
 }
 
