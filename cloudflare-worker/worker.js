@@ -52,6 +52,12 @@ export default {
 				return json({ ok: true })
 			}
 
+			if (pathname.startsWith('/configs/') && method === 'DELETE') {
+				const [, , cpuType, game, budgetKey] = pathname.split('/')
+				await deleteConfig(env.DB, cpuType, game, budgetKey)
+				return json({ ok: true })
+			}
+
 			return json({ error: 'not_found' }, 404)
 		} catch (err) {
 			return json({ error: 'internal_error', message: String(err?.message || err) }, 500)
@@ -121,5 +127,11 @@ async function allConfigs(db) {
 async function upsertConfig(db, { cpuType, game, budgetKey, payload }) {
 	await db.prepare('INSERT INTO configs(cpuType,game,budgetKey,payload) VALUES(?1,?2,?3,?4) ON CONFLICT(cpuType,game,budgetKey) DO UPDATE SET payload=excluded.payload')
 		.bind(cpuType, game, budgetKey, JSON.stringify(payload))
+		.run()
+}
+
+async function deleteConfig(db, cpuType, game, budgetKey) {
+	await db.prepare('DELETE FROM configs WHERE cpuType=?1 AND game=?2 AND budgetKey=?3')
+		.bind(cpuType, game, budgetKey)
 		.run()
 }
